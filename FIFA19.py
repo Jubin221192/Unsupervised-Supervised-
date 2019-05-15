@@ -417,5 +417,11 @@ sns.distplot(ytest-predicted_wages)
 plt.axis([-50000, 50000, 0, 0.00016])
 
 """
+<<<<<<< HEAD
 Dveloped by jubin mohanty
 """
+=======
+AI Course
+Jubin Mohanty
+"""
+>>>>>>> opt
