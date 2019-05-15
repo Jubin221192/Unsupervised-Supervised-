@@ -13,7 +13,7 @@ warnings.simplefilter("ignore")
 
 # Importing data
 data = pd.read_csv("C:/Users/jubin/Dropbox/A.I/data.csv", index_col =0)
-
+data_sel1 = data.iloc[1:10,[83,84,85,86,87]]
 # Finding the null values:
 null_val = data.isna().sum()
 print(data.shape)
@@ -109,7 +109,7 @@ sns.set(style= "dark", palette= "muted", color_codes= True)
 x = data.Potential
 plt.figure(figsize=(12, 8))
 ax = sns.distplot(x, bins= 58, kde= False, color= 'y')
-ax.set_xlabel(xlabel= "Player\ 's Potential Scores", fontsize = 16)
+ax.set_xlabel(xlabel= "Player's Potential Scores", fontsize = 16)
 ax.set_ylabel(ylabel= 'Number of players', fontsize = 16)
 ax.set_title(label ='Histogram of players Potential Scores', fontsize = 20)
 plt.show()
@@ -244,8 +244,15 @@ C
 #Plotting the clusters
 figure, axes = plt.subplots()
 axes.margins(0.05)
-axes.scatter(dataK[:, 0], dataK[:, 1], c=labels)
-axes.scatter(C[:, 0], C[:, 1], marker='*', c='#060502', s=100)
+
+LABEL_COLOR_MAP = {0 : 'r',
+                   1 : 'y'}
+
+label_color = [LABEL_COLOR_MAP[l] for l in labels]
+axes.scatter(dataK[:, 0], dataK[:, 1], c=label_color)
+
+
+axes.scatter(C[:, 0], C[:, 1], marker='*', c='#050505', s=100)
 plt.xlabel("Feature 1")
 plt.ylabel("Feature 2")
 plt.show()
@@ -270,7 +277,142 @@ df = pd.DataFrame(
 print(df)
 
 
+# Players wages prediction using regression
 
+# Distribution of overall rating
 
+bins = np.arange(data['Overall'].min(), data['Overall'].max()+1, 1)
+X = data[['Overall']]
+plt.figure(figsize=[8,5])
+plt.hist(data['Overall'], bins=bins)
+plt.title('Overall Rating Distribution')
+plt.xlabel('Mean Overall Rating')
+plt.ylabel('Count')
+plt.show()
 
+# Age vs Overall Rating
+plt.figure(figsize=[16,5])
+plt.suptitle('Overall Rating Vs Age', fontsize=16)
+
+fig = plt.subplot(1,2,1)
+bin_x = np.arange(data['Age'].min(), data['Age'].max()+1, 1)
+bin_y = np.arange(data['Overall'].min(), data['Overall'].max()+2, 2)
+
+plt.hist2d(x = data['Age'], y = data['Overall'], cmap="YlGnBu", bins=[bin_x, bin_y])
+plt.colorbar()
+plt.xlabel('Age (years)')
+plt.ylabel('Overall Rating')
+
+plt.subplot(1,2,2)
+plt.scatter(x = data['Age'], y = data['Overall'], alpha=0.25, marker='.')
+
+plt.xlabel('Age (years)')
+plt.ylabel('Overall Rating')
+
+# Overall Rating vs Potential vs Age
+plt.figure(figsize=[8,5])
+plt.scatter(x=data['Overall'], y=data['Potential'], c=data['Age'], alpha=0.25, cmap='rainbow' )
+plt.colorbar().set_label('Age')
+plt.xlabel('Overall Rating')
+plt.ylabel('Potential')
+plt.suptitle('Overall Rating Vs Potential Vs Age', fontsize=16)
+plt.show()
+
+data_pwg = data[['ID','Name', 'Age', 'Overall', 'Potential', 'Value','Wage']]
+
+# overall vs Wage (degree=1)
+sns.lmplot(data=data_pwg, x='Overall', y='Wage', scatter_kws={'alpha':0.3, 'color':'y'} )
+
+# degree = 2
+sns.lmplot(data=data_pwg, x='Overall', y='Wage',order=2, scatter_kws={'alpha':0.3, 'color':'y'} )
+
+# degree = 3
+sns.lmplot(data=data_pwg, x='Overall', y='Wage',order=3, scatter_kws={'alpha':0.3, 'color':'y'} )
+
+# Wage vs Age(degree =1)
+sns.lmplot(data=data_pwg, x='Age', y='Wage', scatter_kws={'alpha':0.3, 'color':'y'} )
+
+# degree = 2
+sns.lmplot(data=data_pwg, x='Age', y='Wage',order=2, scatter_kws={'alpha':0.3, 'color':'y'} )
+
+# degree = 3
+sns.lmplot(data=data_pwg, x='Age', y='Wage',order=3, scatter_kws={'alpha':0.3, 'color':'y'} )
+
+# Wage vs Value(degree=1)
+sns.lmplot(data=data_pwg, x='Value', y='Wage',order=1, scatter_kws={'alpha':0.3, 'color':'y'} )
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn import metrics
+
+X = data_pwg[['Age','Overall','Potential','Value']]
+y = data_pwg['Wage']
+
+z= data_pwg[['Wage']]
+Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, test_size=0.3, random_state=101)
+
+# Normalizing Train and Test data
+
+from sklearn.preprocessing import StandardScaler
+stsc = StandardScaler()
+Xtrain = stsc.fit_transform(Xtrain)
+Xtest = stsc.fit_transform(Xtest)
+
+def pred_wage(degree, Xtrain, Xtest, ytrain):
+    if degree > 1:
+        poly = PolynomialFeatures(degree = degree)
+        Xtrain = poly.fit_transform(Xtrain)
+        Xtest = poly.fit_transform(Xtest)
+    lm = LinearRegression()
+    lm.fit(Xtrain, ytrain)
+    wages = lm.predict(Xtest)
+    return wages
+
+# Polynomial regression: Finding the best degree to predict with
+MAE, MSE, RMSE = [], [], []
+
+for i in range(1, 11):
+    predicted_wages = pred_wage(i, Xtrain, Xtest, ytrain)
+    MAE.append(metrics.mean_absolute_error(ytest, predicted_wages))
+    MSE.append(metrics.mean_squared_error(ytest, predicted_wages))
+    RMSE.append(np.sqrt(metrics.mean_squared_error(ytest, predicted_wages)))
+
+# plotting MAE, MSE, RMSE
+
+plt.figure(figsize=(11,8))
+plt.subplot(2,2,1)
+plt.plot(MAE, color='red')
+plt.xlabel('Degree')
+plt.ylabel('Mean Absolute Error')
+plt.xlim(-0.5, 10)
+plt.ylim(-0.05e7, 0.2e7)
+plt.subplot(2,2,2)
+plt.plot(MSE, color='green')
+plt.xlabel('Degree')
+plt.ylabel('Mean Squared Error')
+plt.xlim(-0.5, 10)
+plt.ylim(-0.25e17, 1e17)
+plt.subplot(2,2,3)
+plt.plot(RMSE, color='yellow')
+plt.xlabel('Degree')
+plt.ylabel('Rooted Mean Squared Error')
+plt.xlim(-0.5, 10)
+plt.ylim(-0.5e8, 2e8)
+plt.show()
+
+# As we can see above all the three parameters are minimized at degree = 2 to degree = 6,
+# so we can use any degree between them and will apply polynomial regression of degree = 2 to predict wages.
+
+predicted_wages = pred_wage(2, Xtrain, Xtest, ytrain)
+predicted_wages
+
+sns.regplot(ytest, predicted_wages, scatter_kws={'alpha':0.3, 'color':'y'})
+plt.xlabel('Actual Wage')
+plt.ylabel('Predicted Wage')
+plt.show()
+
+# Residual plot
+sns.distplot(ytest-predicted_wages)
+plt.axis([-50000, 50000, 0, 0.00016])
 
