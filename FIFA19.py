@@ -416,3 +416,7 @@ plt.show()
 sns.distplot(ytest-predicted_wages)
 plt.axis([-50000, 50000, 0, 0.00016])
 
+"""
+AI Course
+Jubin Mohanty
+"""
