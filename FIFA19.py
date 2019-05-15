@@ -27,7 +27,7 @@ data['Preferred Foot'].value_counts().head(50).plot.bar(color= 'purple')
 data['International Reputation'].value_counts()
 
 # plotting a pie chart to represent share of international reputation
-labels = ['1', '2', '3', '4', '5']
+
 sizes = [16532, 1261, 309, 51, 6]
 colors = ['red', 'yellow', 'green', 'pink', 'blue']
 
@@ -416,3 +416,6 @@ plt.show()
 sns.distplot(ytest-predicted_wages)
 plt.axis([-50000, 50000, 0, 0.00016])
 
+"""
+Dveloped by jubin mohanty
+"""
